@@ -1,4 +1,8 @@
-# momo-api
+# @lepresk/momo-api
+
+[![npm](https://img.shields.io/npm/v/@lepresk/momo-api)](https://www.npmjs.com/package/@lepresk/momo-api)
+[![CI](https://github.com/lepresk/momo-api-node/actions/workflows/ci.yml/badge.svg)](https://github.com/lepresk/momo-api-node/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 MTN Mobile Money API client for Node.js — collections, disbursements and remittances.
 
@@ -12,11 +16,11 @@ This is a port of the PHP package [`lepresk/momo-api`](https://github.com/lepres
 ## Installation
 
 ```bash
-npm install momo-api
+npm install @lepresk/momo-api
 # or
-pnpm add momo-api
+pnpm add @lepresk/momo-api
 # or
-yarn add momo-api
+yarn add @lepresk/momo-api
 ```
 
 ## Getting started
@@ -26,8 +30,8 @@ yarn add momo-api
 Before making live API calls you need to provision a sandbox user and API key via the `SandboxApi`:
 
 ```typescript
-import { MomoApi, ENVIRONMENT_SANDBOX } from 'momo-api'
-import { generateUUID } from 'momo-api'
+import { MomoApi, ENVIRONMENT_SANDBOX } from '@lepresk/momo-api'
+import { generateUUID } from '@lepresk/momo-api'
 
 const momo = MomoApi.create(ENVIRONMENT_SANDBOX)
 const sandbox = momo.sandbox('your-subscription-key')
@@ -45,7 +49,7 @@ console.log('API Key:', apiKey)
 The Collection product allows you to request payments from customers.
 
 ```typescript
-import { MomoApi, ENVIRONMENT_SANDBOX, Config, PaymentRequest } from 'momo-api'
+import { MomoApi, ENVIRONMENT_SANDBOX, Config, PaymentRequest } from '@lepresk/momo-api'
 
 const config = Config.collection(
   'your-subscription-key',
@@ -93,7 +97,7 @@ const refId = await collection.quickPay('50', '0242439784', 'quick-order-456', '
 The Disbursement product allows you to send money to customers.
 
 ```typescript
-import { MomoApi, ENVIRONMENT_SANDBOX, Config, PaymentRequest, TransferRequest, RefundRequest } from 'momo-api'
+import { MomoApi, ENVIRONMENT_SANDBOX, Config, PaymentRequest, TransferRequest, RefundRequest } from '@lepresk/momo-api'
 
 const config = Config.disbursement(
   'your-subscription-key',
@@ -136,7 +140,7 @@ const disbursement = MomoApi.disbursement(config)
 For production or non-sandbox environments, use `MomoApi.create`:
 
 ```typescript
-import { MomoApi, ENVIRONMENT_MTN_GHANA } from 'momo-api'
+import { MomoApi, ENVIRONMENT_MTN_GHANA } from '@lepresk/momo-api'
 
 const momo = MomoApi.create(ENVIRONMENT_MTN_GHANA)
 const collection = momo.getCollection(config)
@@ -171,7 +175,7 @@ import {
   ResourceNotFoundException,
   ConflictException,
   InternalServerErrorException,
-} from 'momo-api'
+} from '@lepresk/momo-api'
 
 try {
   const referenceId = await collection.requestToPay(request)
