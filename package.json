@@ -1,0 +1,38 @@
+{
+  "name": "momo-api",
+  "version": "1.0.0",
+  "description": "MTN Mobile Money API client for Node.js — collections, disbursements and remittances",
+  "author": "lepresk <lepresk@gmail.com>",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "dev": "tsx src/index.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mtn",
+    "momo",
+    "mobile-money",
+    "africa",
+    "fintech",
+    "api-client"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lepresk/momo-api-node.git"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
