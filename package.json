@@ -22,9 +22,16 @@
     "mtn",
     "momo",
     "mobile-money",
+    "mobile-payment",
     "africa",
     "fintech",
-    "api-client"
+    "api-client",
+    "payment-gateway",
+    "collection",
+    "disbursement",
+    "mtn-momo",
+    "remittance",
+    "typescript"
   ],
   "repository": {
     "type": "git",

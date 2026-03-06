@@ -223,6 +223,24 @@ try {
 | `getApiUser(apiUser)` | Get sandbox API user details |
 | `createApiKey(apiUser)` | Generate an API key for a sandbox user |
 
+## Ecosystem
+
+The same client is available for multiple languages:
+
+| Language | Package | Install |
+|----------|---------|---------|
+| **PHP** | [`lepresk/momo-api`](https://github.com/lepresk/momo-api) | `composer require lepresk/momo-api` |
+| **Node.js / TypeScript** | [`@lepresk/momo-api`](https://github.com/lepresk/momo-api-node) | `npm install @lepresk/momo-api` |
+| **Python** | [`mtn-momo-client`](https://github.com/lepresk/momo-api-python) | `pip install mtn-momo-client` |
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full history of changes.
+
 ## License
 
 MIT
