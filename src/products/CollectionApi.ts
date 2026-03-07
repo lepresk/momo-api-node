@@ -5,11 +5,13 @@ import { PaymentRequest } from '../models/PaymentRequest.js'
 import { Transaction } from '../models/Transaction.js'
 import { createException } from '../exceptions/MomoException.js'
 import { generateUUID } from '../support/uuid.js'
+import { TokenCache } from '../support/TokenCache.js'
 
 export class CollectionApi {
   private readonly config: Config
   private readonly baseUrl: string
   private readonly environment: string
+  private readonly tokenCache = new TokenCache()
 
   constructor(config: Config, baseUrl: string, environment: string) {
     this.config = config
@@ -19,7 +21,7 @@ export class CollectionApi {
 
   private getBasicAuth(): string {
     const credentials = `${this.config.apiUser}:${this.config.apiKey}`
-    return `Basic ${Buffer.from(credentials).toString('base64')}`
+    return `Basic ${btoa(credentials)}`
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -31,6 +33,9 @@ export class CollectionApi {
   }
 
   async getAccessToken(): Promise<ApiToken> {
+    const cached = this.tokenCache.get()
+    if (cached) return ApiToken.fromObject({ access_token: cached, token_type: 'access_token', expires_in: 0 })
+
     const response = await fetch(`${this.baseUrl}/collection/token/`, {
       method: 'POST',
       headers: {
@@ -40,7 +45,9 @@ export class CollectionApi {
     })
 
     const data = await this.handleResponse<Record<string, unknown>>(response)
-    return ApiToken.fromObject(data)
+    const token = ApiToken.fromObject(data)
+    this.tokenCache.set(token.getAccessToken(), token.getExpiresIn())
+    return token
   }
 
   async requestToPay(request: PaymentRequest): Promise<string> {
@@ -116,5 +123,24 @@ export class CollectionApi {
   ): Promise<string> {
     const request = PaymentRequest.make(amount, phone, reference, currency)
     return this.requestToPay(request)
+  }
+
+  async checkAccountHolder(phone: string): Promise<boolean> {
+    const token = await this.getAccessToken()
+
+    const response = await fetch(
+      `${this.baseUrl}/collection/v1_0/accountholder/msisdn/${encodeURIComponent(phone)}/active`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token.getAccessToken()}`,
+          'Ocp-Apim-Subscription-Key': this.config.subscriptionKey,
+          'X-Target-Environment': this.environment,
+        },
+      },
+    )
+
+    const data = await this.handleResponse<{ result: boolean }>(response)
+    return data.result
   }
 }
