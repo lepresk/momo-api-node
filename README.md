@@ -4,14 +4,15 @@
 [![CI](https://github.com/lepresk/momo-api-node/actions/workflows/ci.yml/badge.svg)](https://github.com/lepresk/momo-api-node/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MTN Mobile Money API client for Node.js — collections, disbursements and remittances.
+MTN Mobile Money and Airtel Money API client for Node.js — collections, disbursements and remittances.
 
 This is a port of the PHP package [`lepresk/momo-api`](https://github.com/lepresk/momo-api) to Node.js/TypeScript. See the original article at [lepresk.com/blog](https://lepresk.com/blog).
 
 ## Requirements
 
 - Node.js 18 or later (uses native `fetch` and `crypto.randomUUID`)
-- An MTN MoMo developer account with API credentials
+- An MTN MoMo developer account with API credentials (for MTN)
+- An Airtel Money developer account with OAuth2 credentials (for Airtel)
 
 ## Installation
 
@@ -128,6 +129,70 @@ const balance = await disbursement.getBalance()
 console.log(`Balance: ${balance.getAvailableBalance()} ${balance.getCurrency()}`)
 ```
 
+## Airtel Money
+
+### Airtel Collection (Receive Payments)
+
+```typescript
+import { AirtelApi } from '@lepresk/momo-api'
+
+const collection = AirtelApi.collection('staging', {
+  clientId: 'YOUR_CLIENT_ID',
+  clientSecret: 'YOUR_CLIENT_SECRET',
+  callbackUri: 'https://your-callback-host.com/webhook',
+  country: 'CG',    // optional, defaults to 'CG'
+  currency: 'XAF',  // optional, defaults to 'XAF'
+})
+
+// Request a payment
+const externalId = await collection.requestToPay('5000', '068511358', 'ORDER-001')
+
+// Check payment status
+const transaction = await collection.getPaymentStatus(externalId)
+
+if (transaction.isSuccessful()) {
+  console.log('Payment received! Airtel Money ID:', transaction.getAirtelMoneyId())
+} else if (transaction.isPending()) {
+  console.log('Payment pending...')
+} else if (transaction.isFailed()) {
+  console.log('Payment failed')
+}
+
+// Check balance
+const balance = await collection.getBalance()
+console.log(`Available: ${balance.getAvailableBalance()} ${balance.getCurrency()}`)
+```
+
+### Airtel Disbursement (Send Money)
+
+```typescript
+import { AirtelApi } from '@lepresk/momo-api'
+
+const disbursement = AirtelApi.disbursement('production', {
+  clientId: 'YOUR_CLIENT_ID',
+  clientSecret: 'YOUR_CLIENT_SECRET',
+  encryptedPin: 'YOUR_ENCRYPTED_PIN',
+  callbackUri: 'https://your-callback-host.com/webhook',
+})
+
+// Transfer money
+const externalId = await disbursement.transfer('10000', '068511358', 'PAY-001')
+
+// Check transfer status
+const transaction = await disbursement.getTransferStatus(externalId)
+
+if (transaction.isSuccessful()) {
+  console.log('Transfer completed!')
+}
+```
+
+### Airtel environments
+
+| Mode | URL | Use Case |
+|------|-----|----------|
+| `staging` | `https://openapiuat.airtel.cg` | Testing |
+| `production` | `https://openapi.airtel.cg` | Production (Congo) |
+
 ## Static factory methods
 
 For convenience, `MomoApi` provides static factory methods that default to sandbox:
@@ -214,6 +279,24 @@ try {
 | `getRefundStatus(refundId)` | Get the status of a refund |
 | `getBalance()` | Get the disbursement account balance |
 | `getAccessToken()` | Retrieve an OAuth access token |
+
+### AirtelCollectionApi
+
+| Method | Description |
+|---|---|
+| `requestToPay(amount, phone, reference)` | Request payment from customer; returns the external ID |
+| `getPaymentStatus(externalId)` | Check payment status (returns `AirtelTransaction`) |
+| `getBalance()` | Get account balance |
+| `getAccessToken()` | Get OAuth token (cached automatically) |
+
+### AirtelDisbursementApi
+
+| Method | Description |
+|---|---|
+| `transfer(amount, phone, reference)` | Transfer money (requires `encryptedPin`); returns the external ID |
+| `getTransferStatus(externalId)` | Check transfer status (returns `AirtelTransaction`) |
+| `getBalance()` | Get account balance |
+| `getAccessToken()` | Get OAuth token (cached automatically) |
 
 ### SandboxApi
 
