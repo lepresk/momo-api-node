@@ -66,7 +66,7 @@ const request = PaymentRequest.make(
   '100',          // amount
   '0242439784',   // payer phone number (MSISDN)
   'order-123',    // external reference ID
-  'EUR',          // currency
+  'EUR',          // currency (optional, defaults to XAF)
   'Payment for order #123',  // payer message (optional)
   'Thank you'                // payee note (optional)
 )
@@ -90,6 +90,7 @@ const balance = await collection.getBalance()
 console.log(`Balance: ${balance.getAvailableBalance()} ${balance.getCurrency()}`)
 
 // Quick pay shorthand
+// currency is optional and defaults to XAF
 const refId = await collection.quickPay('50', '0242439784', 'quick-order-456', 'EUR')
 ```
 
@@ -195,21 +196,67 @@ if (transaction.isSuccessful()) {
 
 ## Static factory methods
 
-For convenience, `MomoApi` provides static factory methods that default to sandbox:
-
-```typescript
-const collection = MomoApi.collection(config)
-const disbursement = MomoApi.disbursement(config)
-```
-
-For production or non-sandbox environments, use `MomoApi.create`:
+`MomoApi.collection()` and `MomoApi.disbursement()` build a product from flat
+credentials, in any environment:
 
 ```typescript
 import { MomoApi, ENVIRONMENT_MTN_GHANA } from '@lepresk/momo-api'
 
+const collection = MomoApi.collection({
+  environment: ENVIRONMENT_MTN_GHANA,   // optional, defaults to sandbox
+  subscriptionKey: 'your-subscription-key',
+  apiUser: 'your-api-user',
+  apiKey: 'your-api-key',
+  callbackUrl: 'https://your-callback-host.com/webhook',  // optional
+})
+
+const disbursement = MomoApi.disbursement({
+  subscriptionKey: 'your-subscription-key',
+  apiUser: 'your-api-user',
+  apiKey: 'your-api-key',
+})
+```
+
+Missing credentials throw immediately (`subscriptionKey is required`), and an
+environment outside the table below throws `Unknown environment: '...'` rather
+than silently pointing at production.
+
+They also accept a `Config` instance, with the environment as a second argument:
+
+```typescript
 const momo = MomoApi.create(ENVIRONMENT_MTN_GHANA)
 const collection = momo.getCollection(config)
+
+// equivalent
+const same = MomoApi.collection(config, ENVIRONMENT_MTN_GHANA)
 ```
+
+## Custom HTTP client
+
+Every product uses the global `fetch` by default. Supply your own
+`fetch`-compatible function to add timeouts, retries, proxying or logging:
+
+```typescript
+import { MomoApi, AirtelApi } from '@lepresk/momo-api'
+
+const withTimeout: typeof fetch = (input, init) =>
+  fetch(input, { ...init, signal: AbortSignal.timeout(10_000) })
+
+// with the static factories
+const collection = MomoApi.collection({ ...credentials, fetchImpl: withTimeout })
+
+// with a client, inherited by every product it builds
+const momo = MomoApi.create(ENVIRONMENT_MTN_GHANA, withTimeout)
+
+// Airtel
+const airtel = AirtelApi.create('production', withTimeout)
+
+// or directly, as the last constructor argument
+const direct = new CollectionApi(config, baseUrl, environment, withTimeout)
+```
+
+The implementation is scoped to the client you pass it to — nothing is installed
+process-wide, so two libraries using this package cannot affect each other.
 
 ## Supported environments
 
@@ -251,6 +298,41 @@ try {
     console.error('Invalid request parameters')
   } else if (err instanceof MomoException) {
     console.error(`MoMo API error (${err.statusCode}):`, err.message)
+  }
+}
+```
+
+`MomoException` carries the parsed API payload: `message` is the API's own
+message, `reason` an `ErrorReason` with the helpers described below, `code` its
+machine-readable code (`NOT_ENOUGH_FUNDS`, ...) and `body` the raw response.
+
+```typescript
+catch (err) {
+  if (err instanceof MomoException && err.reason?.isNotEnoughFunds()) {
+    console.error('Payer has insufficient funds')
+  }
+}
+```
+
+### Why a payment failed
+
+A failed transaction carries an `ErrorReason`:
+
+```typescript
+import { ErrorReason } from '@lepresk/momo-api'
+
+const transaction = await collection.getPaymentStatus(referenceId)
+
+if (transaction.isFailed()) {
+  const reason = transaction.getReason()
+  // every MTN failure code has a predicate, or use reason.is(ErrorReason.X)
+
+  if (reason?.isNotEnoughFunds()) {
+    console.error('Payer has insufficient funds')
+  } else if (reason?.isExpired()) {
+    console.error('The payment request expired')
+  } else {
+    console.error(String(reason))   // "[APPROVAL_REJECTED] ..."
   }
 }
 ```

@@ -1,66 +1,55 @@
-import { createException } from '../exceptions/MomoException.js'
+import { FetchLike, resolveFetch, readJsonAllowEmpty } from '../support/http.js'
 
 export class SandboxApi {
   private readonly subscriptionKey: string
   private readonly baseUrl: string
+  private readonly fetchImpl: FetchLike
 
-  constructor(subscriptionKey: string, baseUrl: string) {
+  constructor(subscriptionKey: string, baseUrl: string, fetchImpl?: FetchLike) {
     this.subscriptionKey = subscriptionKey
     this.baseUrl = baseUrl
+    this.fetchImpl = resolveFetch(fetchImpl)
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw createException(response.status, text || undefined)
+  private headers(contentType = false): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Ocp-Apim-Subscription-Key': this.subscriptionKey,
+      'Accept': 'application/json',
     }
-
-    const text = await response.text()
-    if (!text) {
-      return {} as T
+    if (contentType) {
+      headers['Content-Type'] = 'application/json'
     }
-    return JSON.parse(text) as T
+    return headers
   }
 
+  /** Provision an API user. Returns the reference id you passed in. */
   async createApiUser(apiUser: string, callbackHost: string): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/v1_0/apiuser`, {
+    const response = await this.fetchImpl(`${this.baseUrl}/v1_0/apiuser`, {
       method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': this.subscriptionKey,
-        'X-Reference-Id': apiUser,
-        'Content-Type': 'application/json',
-      },
+      headers: { ...this.headers(true), 'X-Reference-Id': apiUser },
       body: JSON.stringify({ providerCallbackHost: callbackHost }),
     })
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      throw createException(response.status, text || undefined)
-    }
-
+    await readJsonAllowEmpty(response)
     return apiUser
   }
 
   async getApiUser(apiUser: string): Promise<object> {
-    const response = await fetch(`${this.baseUrl}/v1_0/apiuser/${apiUser}`, {
+    const response = await this.fetchImpl(`${this.baseUrl}/v1_0/apiuser/${apiUser}`, {
       method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': this.subscriptionKey,
-      },
+      headers: this.headers(),
     })
 
-    return this.handleResponse<object>(response)
+    return readJsonAllowEmpty<object>(response)
   }
 
   async createApiKey(apiUser: string): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/v1_0/apiuser/${apiUser}/apikey`, {
+    const response = await this.fetchImpl(`${this.baseUrl}/v1_0/apiuser/${apiUser}/apikey`, {
       method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': this.subscriptionKey,
-      },
+      headers: this.headers(),
     })
 
-    const data = await this.handleResponse<Record<string, unknown>>(response)
-    return data['apiKey'] as string
+    const data = await readJsonAllowEmpty<{ apiKey: string }>(response)
+    return data.apiKey
   }
 }

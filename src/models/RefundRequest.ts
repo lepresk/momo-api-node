@@ -1,10 +1,9 @@
-export class RefundRequest {
-  readonly amount: string
-  readonly currency: string
-  readonly externalId: string
+import { AbstractRequest } from './AbstractRequest.js'
+import { DEFAULT_CURRENCY } from './currency.js'
+
+export class RefundRequest extends AbstractRequest {
+  /** Reference id of the collection payment being refunded. */
   readonly referenceIdToRefund: string
-  readonly payerMessage: string
-  readonly payeeNote: string
 
   constructor(
     amount: string,
@@ -14,19 +13,15 @@ export class RefundRequest {
     payerMessage: string = '',
     payeeNote: string = ''
   ) {
-    this.amount = amount
-    this.currency = currency
-    this.externalId = externalId
+    super(amount, currency, externalId, payerMessage, payeeNote)
     this.referenceIdToRefund = referenceIdToRefund
-    this.payerMessage = payerMessage
-    this.payeeNote = payeeNote
   }
 
   static make(
     amount: string,
     referenceIdToRefund: string,
     externalId: string,
-    currency: string = 'EUR',
+    currency: string = DEFAULT_CURRENCY,
     payerMessage: string = '',
     payeeNote: string = ''
   ): RefundRequest {
@@ -40,14 +35,7 @@ export class RefundRequest {
     )
   }
 
-  toBody(): object {
-    return {
-      amount: this.amount,
-      currency: this.currency,
-      externalId: this.externalId,
-      referenceIdToRefund: this.referenceIdToRefund,
-      payerMessage: this.payerMessage,
-      payeeNote: this.payeeNote,
-    }
+  protected subject(): Record<string, unknown> {
+    return { referenceIdToRefund: this.referenceIdToRefund }
   }
 }

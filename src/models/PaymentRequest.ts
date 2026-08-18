@@ -1,10 +1,9 @@
-export class PaymentRequest {
-  readonly amount: string
-  readonly currency: string
-  readonly externalId: string
+import { AbstractRequest, msisdn } from './AbstractRequest.js'
+import { DEFAULT_CURRENCY } from './currency.js'
+
+export class PaymentRequest extends AbstractRequest {
+  /** MSISDN of the party being asked to pay. */
   readonly payer: string
-  readonly payerMessage: string
-  readonly payeeNote: string
 
   constructor(
     amount: string,
@@ -14,36 +13,22 @@ export class PaymentRequest {
     payerMessage: string = '',
     payeeNote: string = ''
   ) {
-    this.amount = amount
-    this.currency = currency
-    this.externalId = externalId
+    super(amount, currency, externalId, payerMessage, payeeNote)
     this.payer = payer
-    this.payerMessage = payerMessage
-    this.payeeNote = payeeNote
   }
 
   static make(
     amount: string,
     payer: string,
     externalId: string,
-    currency: string = 'EUR',
+    currency: string = DEFAULT_CURRENCY,
     payerMessage: string = '',
     payeeNote: string = ''
   ): PaymentRequest {
     return new PaymentRequest(amount, currency, externalId, payer, payerMessage, payeeNote)
   }
 
-  toBody(): object {
-    return {
-      amount: this.amount,
-      currency: this.currency,
-      externalId: this.externalId,
-      payer: {
-        partyIdType: 'MSISDN',
-        partyId: this.payer,
-      },
-      payerMessage: this.payerMessage,
-      payeeNote: this.payeeNote,
-    }
+  protected subject(): Record<string, unknown> {
+    return { payer: msisdn(this.payer) }
   }
 }
