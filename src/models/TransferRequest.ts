@@ -1,10 +1,9 @@
-export class TransferRequest {
-  readonly amount: string
-  readonly currency: string
-  readonly externalId: string
+import { AbstractRequest, msisdn } from './AbstractRequest.js'
+import { DEFAULT_CURRENCY } from './currency.js'
+
+export class TransferRequest extends AbstractRequest {
+  /** MSISDN of the party receiving the funds. */
   readonly payee: string
-  readonly payerMessage: string
-  readonly payeeNote: string
 
   constructor(
     amount: string,
@@ -14,36 +13,22 @@ export class TransferRequest {
     payerMessage: string = '',
     payeeNote: string = ''
   ) {
-    this.amount = amount
-    this.currency = currency
-    this.externalId = externalId
+    super(amount, currency, externalId, payerMessage, payeeNote)
     this.payee = payee
-    this.payerMessage = payerMessage
-    this.payeeNote = payeeNote
   }
 
   static make(
     amount: string,
     payee: string,
     externalId: string,
-    currency: string = 'EUR',
+    currency: string = DEFAULT_CURRENCY,
     payerMessage: string = '',
     payeeNote: string = ''
   ): TransferRequest {
     return new TransferRequest(amount, currency, externalId, payee, payerMessage, payeeNote)
   }
 
-  toBody(): object {
-    return {
-      amount: this.amount,
-      currency: this.currency,
-      externalId: this.externalId,
-      payee: {
-        partyIdType: 'MSISDN',
-        partyId: this.payee,
-      },
-      payerMessage: this.payerMessage,
-      payeeNote: this.payeeNote,
-    }
+  protected subject(): Record<string, unknown> {
+    return { payee: msisdn(this.payee) }
   }
 }

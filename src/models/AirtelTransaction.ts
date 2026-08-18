@@ -28,12 +28,13 @@ export class AirtelTransaction {
   }
 
   static parse(data: Record<string, unknown>): AirtelTransaction {
-    return new AirtelTransaction(data as {
-      id: string
-      status: AirtelTransactionStatus
-      airtel_money_id?: string
-      message?: string
-      request_id?: string
+    return new AirtelTransaction({
+      id: String(data['id'] ?? ''),
+      status: String(data['status'] ?? ''),
+      airtel_money_id:
+        data['airtel_money_id'] != null ? String(data['airtel_money_id']) : undefined,
+      message: data['message'] != null ? String(data['message']) : undefined,
+      request_id: data['request_id'] != null ? String(data['request_id']) : undefined,
     })
   }
 

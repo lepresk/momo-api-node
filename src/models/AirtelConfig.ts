@@ -1,3 +1,5 @@
+import { DEFAULT_CURRENCY } from './currency.js'
+
 export interface AirtelConfigOptions {
   /** OAuth2 client_id credential from the Airtel developer portal */
   clientId: string
@@ -26,7 +28,7 @@ export class AirtelConfig {
     this.clientSecret = options.clientSecret
     this.encryptedPin = options.encryptedPin ?? ''
     this.country = options.country ?? 'CG'
-    this.currency = options.currency ?? 'XAF'
+    this.currency = options.currency ?? DEFAULT_CURRENCY
     this.callbackUri = options.callbackUri ?? ''
   }
 

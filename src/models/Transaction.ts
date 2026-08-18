@@ -1,3 +1,6 @@
+import { ErrorReason } from './ErrorReason.js'
+import { isRecord } from '../support/json.js'
+
 export type TransactionStatus = 'SUCCESSFUL' | 'PENDING' | 'FAILED'
 
 export class Transaction {
@@ -59,5 +62,10 @@ export class Transaction {
 
   getPayeeNote(): string | null {
     return (this.data['payeeNote'] as string) ?? null
+  }
+
+  getReason(): ErrorReason | null {
+    const reason = this.data['reason']
+    return isRecord(reason) ? ErrorReason.fromObject(reason) : null
   }
 }
