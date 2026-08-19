@@ -1,6 +1,5 @@
 import { AbstractAirtelApi } from './AbstractAirtelApi.js'
 import { AirtelTransaction } from '../models/AirtelTransaction.js'
-import { readJson } from '../support/http.js'
 import { generateUUID } from '../support/uuid.js'
 
 export class AirtelCollectionApi extends AbstractAirtelApi {
@@ -23,7 +22,7 @@ export class AirtelCollectionApi extends AbstractAirtelApi {
         subscriber: {
           country: this.config.country,
           currency: this.config.currency,
-          msisdn: phone,
+          msisdn: this.msisdn(phone),
         },
         transaction: {
           amount: parseFloat(amount),
@@ -34,7 +33,7 @@ export class AirtelCollectionApi extends AbstractAirtelApi {
       }),
     })
 
-    await readJson(response)
+    await this.readAirtel(response)
     return externalId
   }
 

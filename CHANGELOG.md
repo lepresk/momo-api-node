@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-19
+
+Airtel Money corrections, taken from a production integration of the same API.
+Anyone using the Airtel products should upgrade: the previous release could
+report a refused payment as accepted.
+
+### Fixed
+- `TI` ("transaction initiated") was not recognised as a pending status. A `TI`
+  transaction answered `false` to `isPending()`, `isSuccessful()` **and**
+  `isFailed()`, leaving the caller with a transaction in no state at all
+- Airtel reports business failures — insufficient funds, invalid PIN, unknown
+  transaction — with HTTP 200 and `status.success: false` in the body. Those were
+  read as successes: `requestToPay()` and `transfer()` returned an externalId for
+  a request Airtel had refused. They now raise a `MomoException` carrying the
+  Airtel message and result code
+- The MSISDN was sent verbatim. Airtel expects a national number, so a
+  country-prefixed one (`242068511358`) was rejected. It is now stripped before
+  the request; an already-national number is untouched
+- `AirtelTransaction` exposed no `reference_id`, the identifier Airtel actually
+  returns, and carried an unused private `request_id`
+
+- **The published package was unusable.** `tsconfig.json` emitted CommonJS while
+  `package.json` declares `"type": "module"`, so `import` failed with "does not
+  provide an export named ..." and `require` failed with "exports is not defined
+  in ES module scope". 2.0.0 was broken in every consumer, and 1.1.0 shipped with
+  no `dist/` at all. The build now emits ESM (`module: NodeNext`), `prepack`
+  rebuilds before every tarball, and a test suite consumes `dist/` rather than
+  `src/` so this cannot regress unnoticed
+
+### Changed
+- **BREAKING** — requires Node.js 22 or later. Node 18 reached end of life in
+  April 2025 and Node 20 in April 2026; both are unsupported and receive no
+  security fixes. CI now covers 22 (LTS maintenance) and 24 (active LTS)
+
+### Added
+- `encryptAirtelPin(pin, publicKey)` — RSA/PKCS1 encryption of a disbursement
+  PIN with Airtel's public key, accepted base64-encoded or as PEM. The transfer
+  endpoint requires an encrypted PIN and there was previously no way to produce
+  one
+- `AirtelResponseStatus` — the `status` envelope Airtel returns alongside `data`,
+  with `getResultCode()`, `getResponseCode()`, `getCode()` and `getMessage()`
+- `cleanPhoneNumber()` and `AIRTEL_COUNTRY_CODES`, exported so callers can
+  normalise numbers themselves
+- `AirtelTransaction.getReferenceId()`, and the status codes as constants
+  (`STATUS_SUCCESSFUL`, `STATUS_FAILED`, `STATUS_PENDING`, `STATUS_IN_PROGRESS`)
+
 ## [2.0.0] - 2026-08-19
 
 Alignment release: brings the Node client to parity with the production-proven

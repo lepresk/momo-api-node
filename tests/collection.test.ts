@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mockFetch } from './fixtures/fetch.js'
 import { CollectionApi } from '../src/products/CollectionApi.js'
 import { Config } from '../src/models/Config.js'
 import { PaymentRequest } from '../src/models/PaymentRequest.js'
@@ -15,20 +16,6 @@ import {
   balance,
 } from './fixtures/index.js'
 
-function mockFetch(responses: Array<{ status: number; body: unknown }>) {
-  let callCount = 0
-  return vi.fn().mockImplementation(() => {
-    const response = responses[callCount] ?? responses[responses.length - 1]
-    callCount++
-    const body = JSON.stringify(response.body)
-    return Promise.resolve({
-      ok: response.status >= 200 && response.status < 300,
-      status: response.status,
-      json: () => Promise.resolve(response.body),
-      text: () => Promise.resolve(body),
-    })
-  })
-}
 
 const config = Config.collection(
   'test-subscription-key',

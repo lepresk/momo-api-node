@@ -17,21 +17,21 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [22, 24]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install pnpm
-        # Pinned: pnpm 11 requires Node >= 22.13 and would break the 18 and 20
-        # legs of the matrix. Bump this together with engines.node.
-        uses: pnpm/action-setup@v4
+        # Pinned deliberately: `latest` once drifted onto a pnpm major the
+        # matrix could not run, breaking CI with no change to the lockfile.
+        uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 11
 
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
@@ -44,3 +44,6 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      - name: Verify the packed tarball installs and imports
+        run: pnpm verify:pack

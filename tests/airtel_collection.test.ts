@@ -1,21 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { mockFetch } from './fixtures/fetch.js'
 import { AirtelCollectionApi } from '../src/products/AirtelCollectionApi.js'
 import { AirtelConfig } from '../src/models/AirtelConfig.js'
 
-function mockFetch(responses: Array<{ status: number; body: unknown }>) {
-  let callCount = 0
-  return vi.fn().mockImplementation(() => {
-    const response = responses[callCount] ?? responses[responses.length - 1]
-    callCount++
-    const body = JSON.stringify(response.body)
-    return Promise.resolve({
-      ok: response.status >= 200 && response.status < 300,
-      status: response.status,
-      json: () => Promise.resolve(response.body),
-      text: () => Promise.resolve(body),
-    })
-  })
-}
 
 const airtelTokenSuccess = {
   access_token: 'airtel-test-token-xyz',
