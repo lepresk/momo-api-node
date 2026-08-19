@@ -1,22 +1,26 @@
 {
   "name": "@lepresk/momo-api",
-  "version": "2.0.0",
-  "description": "MTN Mobile Money and Airtel Money API client for Node.js — collections, disbursements and remittances",
+  "version": "2.1.0",
+  "description": "MTN Mobile Money and Airtel Money API client for Node.js \u2014 collections, disbursements and remittances",
   "author": "lepresk <lepresk@gmail.com>",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "prepack": "npm run build",
+    "pretest": "npm run build",
+    "verify:pack": "node scripts/verify-pack.mjs"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "keywords": [
     "mtn",
@@ -42,5 +46,13 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   }
 }

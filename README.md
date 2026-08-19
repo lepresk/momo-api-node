@@ -10,7 +10,7 @@ This is a port of the PHP package [`lepresk/momo-api`](https://github.com/lepres
 
 ## Requirements
 
-- Node.js 18 or later (uses native `fetch` and `crypto.randomUUID`)
+- Node.js 22 or later (uses native `fetch` and `crypto.randomUUID`)
 - An MTN MoMo developer account with API credentials (for MTN)
 - An Airtel Money developer account with OAuth2 credentials (for Airtel)
 
@@ -186,6 +186,47 @@ if (transaction.isSuccessful()) {
   console.log('Transfer completed!')
 }
 ```
+
+### Airtel disbursement PIN
+
+The transfer endpoint takes an RSA-encrypted PIN, never the PIN itself. Encrypt
+it with the public key Airtel gives you:
+
+```typescript
+import { AirtelApi, AirtelConfig, encryptAirtelPin } from '@lepresk/momo-api'
+
+const disbursement = AirtelApi.disbursement('production', {
+  clientId: process.env.AIRTEL_CLIENT_ID!,
+  clientSecret: process.env.AIRTEL_CLIENT_SECRET!,
+  encryptedPin: encryptAirtelPin('1234', process.env.AIRTEL_PUBLIC_KEY!),
+})
+```
+
+The key is accepted base64-encoded or as PEM.
+
+### Airtel phone numbers
+
+Airtel expects a national MSISDN. Numbers are normalised for you — passing
+`242068511358` or `068511358` sends `068511358` either way. `cleanPhoneNumber()`
+is exported if you need the same normalisation elsewhere.
+
+### Airtel failures
+
+Airtel reports business failures with HTTP 200 and `status.success: false`, so
+`requestToPay()` and `transfer()` raise a `MomoException` in that case rather
+than returning an externalId for a refused request:
+
+```typescript
+try {
+  await disbursement.transfer('10000', '068511358', 'PAY-001')
+} catch (err) {
+  if (err instanceof MomoException) {
+    console.error(err.message, err.code)  // "Invalid PIN", "ESB000008"
+  }
+}
+```
+
+Status codes: `TS` successful, `TF` failed, `TIP` and `TI` both pending.
 
 ### Airtel environments
 

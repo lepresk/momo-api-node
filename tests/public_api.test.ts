@@ -38,6 +38,10 @@ describe('public API surface', () => {
       'AirtelDisbursementApi',
       'AirtelConfig',
       'AirtelTransaction',
+      'AirtelResponseStatus',
+      'encryptAirtelPin',
+      'cleanPhoneNumber',
+      'AIRTEL_COUNTRY_CODES',
     ]
 
     for (const name of expected) {

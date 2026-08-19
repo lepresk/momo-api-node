@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { jsonResponse } from './fixtures/fetch.js'
 import { MomoApi, ENVIRONMENT_SANDBOX } from '../src/MomoApi.js'
 import { AirtelApi, AIRTEL_STAGING_URL } from '../src/AirtelApi.js'
 import { AirtelConfig } from '../src/models/AirtelConfig.js'
@@ -6,14 +7,6 @@ import { CollectionApi } from '../src/products/CollectionApi.js'
 import { Config } from '../src/models/Config.js'
 import { tokenSuccess, balance } from './fixtures/index.js'
 
-function jsonResponse(body: unknown, status = 200) {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: () => Promise.resolve(body),
-    text: () => Promise.resolve(JSON.stringify(body)),
-  } as unknown as Response
-}
 
 const credentials = {
   subscriptionKey: 'sub',

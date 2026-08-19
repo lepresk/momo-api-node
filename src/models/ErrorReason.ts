@@ -1,5 +1,13 @@
 import { optionalString } from '../support/json.js'
 
+/**
+ * The `{ code, message }` pair an API returns to explain a failure.
+ *
+ * The constants and predicates below are MTN's vocabulary. An Airtel failure is
+ * carried by the same type — `getCode()` and `getMessage()` are meaningful — but
+ * its codes (`ESB000008`, ...) match none of the predicates, so match on
+ * `getCode()` rather than `isNotEnoughFunds()` when handling Airtel errors.
+ */
 export class ErrorReason {
   static readonly PAYEE_NOT_FOUND = 'PAYEE_NOT_FOUND'
   static readonly PAYER_NOT_FOUND = 'PAYER_NOT_FOUND'

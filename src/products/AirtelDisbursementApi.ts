@@ -1,6 +1,5 @@
 import { AbstractAirtelApi } from './AbstractAirtelApi.js'
 import { AirtelTransaction } from '../models/AirtelTransaction.js'
-import { readJson } from '../support/http.js'
 import { generateUUID } from '../support/uuid.js'
 
 export class AirtelDisbursementApi extends AbstractAirtelApi {
@@ -23,7 +22,7 @@ export class AirtelDisbursementApi extends AbstractAirtelApi {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        payee: { msisdn: phone },
+        payee: { msisdn: this.msisdn(phone) },
         reference,
         pin: this.config.encryptedPin,
         transaction: {
@@ -33,7 +32,7 @@ export class AirtelDisbursementApi extends AbstractAirtelApi {
       }),
     })
 
-    await readJson(response)
+    await this.readAirtel(response)
     return externalId
   }
 
