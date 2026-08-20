@@ -193,7 +193,7 @@ The transfer endpoint takes an RSA-encrypted PIN, never the PIN itself. Encrypt
 it with the public key Airtel gives you:
 
 ```typescript
-import { AirtelApi, AirtelConfig, encryptAirtelPin } from '@lepresk/momo-api'
+import { AirtelApi, encryptAirtelPin } from '@lepresk/momo-api'
 
 const disbursement = AirtelApi.disbursement('production', {
   clientId: process.env.AIRTEL_CLIENT_ID!,
@@ -217,6 +217,8 @@ Airtel reports business failures with HTTP 200 and `status.success: false`, so
 than returning an externalId for a refused request:
 
 ```typescript
+import { MomoException } from '@lepresk/momo-api'
+
 try {
   await disbursement.transfer('10000', '068511358', 'PAY-001')
 } catch (err) {
@@ -278,7 +280,7 @@ Every product uses the global `fetch` by default. Supply your own
 `fetch`-compatible function to add timeouts, retries, proxying or logging:
 
 ```typescript
-import { MomoApi, AirtelApi } from '@lepresk/momo-api'
+import { MomoApi, AirtelApi, CollectionApi } from '@lepresk/momo-api'
 
 const withTimeout: typeof fetch = (input, init) =>
   fetch(input, { ...init, signal: AbortSignal.timeout(10_000) })
