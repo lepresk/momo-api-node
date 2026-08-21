@@ -1,0 +1,63 @@
+name: Publish
+
+# Publishes to npm when a v* tag is pushed.
+#
+# Authentication uses npm trusted publishing (OIDC) — there is no NPM_TOKEN
+# secret to leak or rotate. It requires a one-time setup on npmjs.com; see
+# "Publishing" in CONTRIBUTING.md.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # required: lets the runner mint the OIDC token npm verifies
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Node 24 ships npm 11.17, above the 11.5.1 that trusted publishing needs
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # never publish from a cached install
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check the tag matches package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::tag v$tag does not match package.json $pkg"
+            exit 1
+          fi
+          echo "publishing $pkg"
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Verify the packed tarball installs and imports
+        run: pnpm verify:pack
+
+      - name: Publish
+        run: npm publish --access public

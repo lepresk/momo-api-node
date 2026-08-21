@@ -4,7 +4,7 @@ Contributions are welcome. This document covers the basics to get started.
 
 ## Prerequisites
 
-- Node.js 18 or later
+- Node.js 22 or later
 - pnpm
 
 ## Setup
@@ -48,3 +48,38 @@ Open an issue on [GitHub](https://github.com/lepresk/momo-api-node/issues) with:
 - the version you are using
 - a minimal reproduction
 - the expected vs actual behavior
+
+## Publishing
+
+Releases go out automatically: push a `v*` tag and `.github/workflows/publish.yml`
+builds, tests, verifies the packed tarball, and publishes to npm.
+
+```bash
+# package.json must already carry the new version — the workflow refuses a
+# tag that disagrees with it
+git tag -a v2.2.0 -m "v2.2.0"
+git push origin v2.2.0
+```
+
+Authentication is [npm trusted publishing](https://docs.npmjs.com/trusted-publishers)
+over OIDC, so there is no `NPM_TOKEN` secret in this repository — nothing to leak
+or rotate. It needs a one-time setup on npmjs.com, under the package's
+**Settings → Trusted publisher**:
+
+| Field | Value |
+|-------|-------|
+| Publisher | GitHub Actions |
+| Repository | `lepresk/momo-api-node` |
+| Workflow filename | `publish.yml` |
+| Environment | *(leave empty)* |
+
+Until that is configured, the publish step fails with an authentication error
+and nothing is released; the tag and GitHub release are unaffected.
+
+To publish by hand instead:
+
+```bash
+npm login
+pnpm verify:pack          # installs the real tarball and imports it
+npm publish --access public
+```
