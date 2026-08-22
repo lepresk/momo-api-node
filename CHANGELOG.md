@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-08-22
+
+### Fixed
+- Three README examples did not compile as shown: `AirtelConfig` was imported but
+  never used, and `MomoException` and `CollectionApi` were used without being
+  imported. No source change — 2.1.0 and 2.1.1 ship identical code, but npm
+  serves the README from the tarball, so the published page carried the broken
+  snippets
+
 ## [2.1.0] - 2026-08-19
 
 Airtel Money corrections, taken from a production integration of the same API.
