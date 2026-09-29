@@ -1,7 +1,9 @@
 import { optionalString } from '../support/json.js'
 
 /**
- * The `{ code, message }` pair an API returns to explain a failure.
+ * The `{ code, message }` pair an API returns to explain a failure. Get Status
+ * sends a bare string code instead; it becomes an `ErrorReason` with an empty
+ * message.
  *
  * The constants and predicates below are MTN's vocabulary. An Airtel failure is
  * carried by the same type — `getCode()` and `getMessage()` are meaningful — but
@@ -26,6 +28,14 @@ export class ErrorReason {
   static readonly EXPIRED = 'EXPIRED'
   static readonly TRANSACTION_CANCELED = 'TRANSACTION_CANCELED'
   static readonly RESOURCE_ALREADY_EXIST = 'RESOURCE_ALREADY_EXIST'
+  static readonly COULD_NOT_PERFORM_TRANSACTION = 'COULD_NOT_PERFORM_TRANSACTION'
+  static readonly SENDER_ACCOUNT_NOT_ACTIVE = 'SENDER_ACCOUNT_NOT_ACTIVE'
+  static readonly PAYEE_LIMIT_REACHED = 'PAYEE_LIMIT_REACHED'
+  static readonly TRANSACTION_NOT_FOUND = 'TRANSACTION_NOT_FOUND'
+  static readonly VALIDATION_ERROR = 'VALIDATION_ERROR'
+  /** MTN Congo's Get Status code for a payer with no balance, at a limit, or not allowed to pay. */
+  static readonly LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED =
+    'LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED'
 
   private readonly code: string
   private readonly message: string
@@ -122,7 +132,45 @@ export class ErrorReason {
     return this.is(ErrorReason.RESOURCE_ALREADY_EXIST)
   }
 
+  isLowBalanceOrPayeeLimitReachedOrNotAllowed(): boolean {
+    return this.is(ErrorReason.LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED)
+  }
+
+  isCouldNotPerformTransaction(): boolean {
+    return this.is(ErrorReason.COULD_NOT_PERFORM_TRANSACTION)
+  }
+
+  isSenderAccountNotActive(): boolean {
+    return this.is(ErrorReason.SENDER_ACCOUNT_NOT_ACTIVE)
+  }
+
+  isPayeeLimitReached(): boolean {
+    return this.is(ErrorReason.PAYEE_LIMIT_REACHED)
+  }
+
+  isTransactionNotFound(): boolean {
+    return this.is(ErrorReason.TRANSACTION_NOT_FOUND)
+  }
+
+  isValidationError(): boolean {
+    return this.is(ErrorReason.VALIDATION_ERROR)
+  }
+
+  /**
+   * The payer could not fund the payment: not enough balance or a limit reached.
+   * MTN Congo reports this as `LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED`
+   * rather than `NOT_ENOUGH_FUNDS`, so check this rather than `isNotEnoughFunds()`
+   * when the market does not matter.
+   */
+  isPayerFundingFailure(): boolean {
+    return (
+      this.isNotEnoughFunds() ||
+      this.isPayerLimitReached() ||
+      this.isLowBalanceOrPayeeLimitReachedOrNotAllowed()
+    )
+  }
+
   toString(): string {
-    return `[${this.code}] ${this.message}`
+    return this.message === '' ? `[${this.code}]` : `[${this.code}] ${this.message}`
   }
 }

@@ -66,6 +66,10 @@ export class Transaction {
 
   getReason(): ErrorReason | null {
     const reason = this.data['reason']
-    return isRecord(reason) ? ErrorReason.fromObject(reason) : null
+    // HTTP error bodies carry { code, message }; Get Status reports a FAILED
+    // transaction with HTTP 200 and a bare string code instead
+    if (isRecord(reason)) return ErrorReason.fromObject(reason)
+    if (typeof reason === 'string' && reason !== '') return new ErrorReason(reason, '')
+    return null
   }
 }

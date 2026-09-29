@@ -5,6 +5,7 @@ import { Transaction } from '../models/Transaction.js'
 import { FetchLike, resolveFetch, assertStatus, readJson } from '../support/http.js'
 import { TokenCache } from '../support/TokenCache.js'
 import { generateUUID } from '../support/uuid.js'
+import { SANDBOX_CURRENCY } from '../models/currency.js'
 
 /**
  * Shared behaviour of the MTN products. Collection and Disbursement expose the
@@ -74,10 +75,17 @@ export abstract class AbstractApiProduct {
   /**
    * POST a request and return the generated reference id. The API answers
    * `202 Accepted` and reports the outcome asynchronously.
+   *
+   * The sandbox rejects any currency but EUR, so there the body's currency is
+   * replaced: code written for XAF runs unchanged against the sandbox.
    */
   protected async submit(path: string, body: object): Promise<string> {
     const referenceId = generateUUID()
     const token = await this.getAccessToken()
+    // 'sandbox' is MomoApi's ENVIRONMENT_SANDBOX; importing it here would be circular
+    if (this.environment === 'sandbox') {
+      body = { ...body, currency: SANDBOX_CURRENCY }
+    }
 
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',

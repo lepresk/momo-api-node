@@ -14,6 +14,7 @@ describe('public API surface', () => {
       'SandboxApi',
       'Config',
       'DEFAULT_CURRENCY',
+      'SANDBOX_CURRENCY',
       'ApiToken',
       'AccountBalance',
       'Transaction',

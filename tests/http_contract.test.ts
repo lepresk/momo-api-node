@@ -150,3 +150,43 @@ describe('Airtel status payload', () => {
     expect(transaction.isSuccessful()).toBe(true)
   })
 })
+
+describe('Sandbox currency', () => {
+  // The sandbox accepts EUR only: https://momodeveloper.mtn.com/api-documentation/testing
+  const sentCurrency = (fetchImpl: ReturnType<typeof sequence>) =>
+    JSON.parse(fetchImpl.mock.calls[1][1].body as string).currency
+
+  const submissions: Array<[string, (fetchImpl: ReturnType<typeof sequence>, env: string) => Promise<string>]> = [
+    ['requestToPay', (f, env) => new CollectionApi(config, BASE_URL, env, f).requestToPay(payment)],
+    ['quickPay', (f, env) => new CollectionApi(config, BASE_URL, env, f).quickPay('100', '242068511358', 'ORDER-1')],
+    ['deposit', (f, env) => new DisbursementApi(config, BASE_URL, env, f).deposit(payment)],
+    ['transfer', (f, env) => new DisbursementApi(config, BASE_URL, env, f).transfer(transfer)],
+    ['refund', (f, env) => new DisbursementApi(config, BASE_URL, env, f).refund(refund)],
+  ]
+
+  for (const [name, submit] of submissions) {
+    it(`sends EUR on ${name} in the sandbox, whatever the request currency`, async () => {
+      const fetchImpl = sequence(jsonResponse(tokenSuccess, 200), jsonResponse('', 202))
+
+      await submit(fetchImpl, ENVIRONMENT)
+
+      expect(sentCurrency(fetchImpl)).toBe('EUR')
+    })
+
+    it(`keeps the request currency on ${name} outside the sandbox`, async () => {
+      const fetchImpl = sequence(jsonResponse(tokenSuccess, 200), jsonResponse('', 202))
+
+      await submit(fetchImpl, 'mtncongo')
+
+      expect(sentCurrency(fetchImpl)).toBe('XAF')
+    })
+  }
+
+  it('does not change the request object itself', async () => {
+    const fetchImpl = sequence(jsonResponse(tokenSuccess, 200), jsonResponse('', 202))
+
+    await new CollectionApi(config, BASE_URL, ENVIRONMENT, fetchImpl).requestToPay(payment)
+
+    expect(payment.currency).toBe('XAF')
+  })
+})
