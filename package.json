@@ -42,10 +42,10 @@
     "url": "https://github.com/lepresk/momo-api-node.git"
   },
   "devDependencies": {
-    "@types/node": "^25.3.2",
-    "tsx": "^4.21.0",
+    "@types/node": "^25.9.8",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.11"
   },
   "exports": {
     ".": {
