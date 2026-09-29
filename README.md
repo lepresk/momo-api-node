@@ -94,6 +94,11 @@ console.log(`Balance: ${balance.getAvailableBalance()} ${balance.getCurrency()}`
 const refId = await collection.quickPay('50', '0242439784', 'quick-order-456', 'EUR')
 ```
 
+The sandbox accepts EUR only. Against the sandbox, `requestToPay()`, `quickPay()`,
+`deposit()`, `transfer()` and `refund()` send `EUR` whatever currency the request
+was built with (`SANDBOX_CURRENCY`), so the same XAF code runs in both
+environments. Outside the sandbox the request currency is sent as is.
+
 ## Disbursement
 
 The Disbursement product allows you to send money to customers.

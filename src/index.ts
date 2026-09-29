@@ -28,7 +28,7 @@ export { SandboxApi } from './products/SandboxApi.js'
 // Models
 export { Config } from './models/Config.js'
 export type { CollectionConfig, DisbursementConfig, ConfigOptions } from './models/Config.js'
-export { DEFAULT_CURRENCY } from './models/currency.js'
+export { DEFAULT_CURRENCY, SANDBOX_CURRENCY } from './models/currency.js'
 export { ApiToken } from './models/ApiToken.js'
 export { AccountBalance } from './models/AccountBalance.js'
 export { Transaction } from './models/Transaction.js'
