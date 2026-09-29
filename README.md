@@ -323,6 +323,67 @@ process-wide, so two libraries using this package cannot affect each other.
 | `ENVIRONMENT_LIBERIA`       | `mtnliberia`        |
 | `ENVIRONMENT_SANDBOX`       | `sandbox`           |
 
+## Handling callbacks
+
+> **Callbacks are not signed.** Neither MTN nor Airtel signs the request sent to
+> your callback URL, and that URL is no secret: it travels in the `X-Callback-Url`
+> header of every request. Anyone can call it with `"status": "SUCCESSFUL"`.
+> Never fulfil an order from the callback body. Treat the callback as a signal
+> that something changed, then ask MTN or Airtel for the real status.
+
+### MTN MoMo
+
+MTN sends the callback as a JSON body (`PUT`). Use it only to find the order, then
+re-query the payment with the reference id `requestToPay()` returned, which you
+stored with the order:
+
+```typescript
+async function handleMomoCallback(body: { externalId?: string }) {
+  // Look the order up in your own records; never trust the amount in the callback
+  const order = await orders.findByExternalId(body.externalId ?? '')
+  if (!order) return 404
+
+  // Ask MTN, with the reference id stored when the payment was requested
+  const transaction = await collection.getPaymentStatus(order.momoReferenceId)
+
+  if (
+    transaction.isSuccessful() &&
+    transaction.getExternalId() === order.id &&
+    Number(transaction.getAmount()) === Number(order.amount)
+  ) {
+    await order.markPaid()   // make this idempotent: MTN may call more than once
+  } else if (transaction.isFailed()) {
+    await order.markFailed(String(transaction.getReason()))
+  }
+  return 200
+}
+```
+
+### Airtel Money
+
+Airtel's callback carries `transaction.id`, the externalId you passed to
+`requestToPay()`. Re-query it the same way:
+
+```typescript
+async function handleAirtelCallback(body: { transaction?: { id?: string } }) {
+  const order = await orders.findByExternalId(body.transaction?.id ?? '')
+  if (!order) return 404
+
+  // Ask Airtel; the callback's status_code is not proof of payment
+  const transaction = await airtelCollection.getPaymentStatus(order.id)
+
+  if (transaction.isSuccessful()) {
+    await order.markPaid()
+  } else if (transaction.isFailed()) {
+    await order.markFailed(transaction.getMessage() ?? '')
+  }
+  return 200
+}
+```
+
+`Transaction.parse()` turns an object into a `Transaction`; it does not verify
+anything. Use it on data you fetched yourself, not on a callback you intend to act on.
+
 ## Error handling
 
 All API errors are surfaced as typed exceptions that extend `MomoException`:
