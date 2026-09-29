@@ -370,12 +370,14 @@ if (transaction.isFailed()) {
   const reason = transaction.getReason()
   // every MTN failure code has a predicate, or use reason.is(ErrorReason.X)
 
-  if (reason?.isNotEnoughFunds()) {
-    console.error('Payer has insufficient funds')
+  // isPayerFundingFailure() also covers LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED,
+  // which MTN Congo returns instead of NOT_ENOUGH_FUNDS
+  if (reason?.isPayerFundingFailure()) {
+    console.error('Payer has insufficient funds or reached a limit')
   } else if (reason?.isExpired()) {
     console.error('The payment request expired')
   } else {
-    console.error(String(reason))   // "[APPROVAL_REJECTED] ..."
+    console.error(String(reason))   // "[COULD_NOT_PERFORM_TRANSACTION]"
   }
 }
 ```

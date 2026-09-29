@@ -46,6 +46,12 @@ describe('ErrorReason', () => {
       ['EXPIRED', 'isExpired'],
       ['TRANSACTION_CANCELED', 'isTransactionCanceled'],
       ['RESOURCE_ALREADY_EXIST', 'isResourceAlreadyExist'],
+      ['LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED', 'isLowBalanceOrPayeeLimitReachedOrNotAllowed'],
+      ['COULD_NOT_PERFORM_TRANSACTION', 'isCouldNotPerformTransaction'],
+      ['SENDER_ACCOUNT_NOT_ACTIVE', 'isSenderAccountNotActive'],
+      ['PAYEE_LIMIT_REACHED', 'isPayeeLimitReached'],
+      ['TRANSACTION_NOT_FOUND', 'isTransactionNotFound'],
+      ['VALIDATION_ERROR', 'isValidationError'],
     ]
 
     for (const [code, predicate] of predicates) {
@@ -71,6 +77,22 @@ describe('ErrorReason', () => {
     expect(String(reason)).toBe('[EXPIRED] Transaction expired')
   })
 
+  it('renders as [CODE] alone when there is no message', () => {
+    expect(String(new ErrorReason('NOT_ENOUGH_FUNDS', ''))).toBe('[NOT_ENOUGH_FUNDS]')
+  })
+
+  it('groups the payer funding failures, including the Congo code', () => {
+    const matches = (code: string) => new ErrorReason(code, '').isPayerFundingFailure()
+
+    expect(matches(ErrorReason.NOT_ENOUGH_FUNDS)).toBe(true)
+    expect(matches(ErrorReason.PAYER_LIMIT_REACHED)).toBe(true)
+    expect(matches(ErrorReason.LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED)).toBe(true)
+
+    expect(matches(ErrorReason.PAYER_NOT_FOUND)).toBe(false)
+    expect(matches(ErrorReason.PAYEE_LIMIT_REACHED)).toBe(false)
+    expect(matches(ErrorReason.EXPIRED)).toBe(false)
+  })
+
   it('exposes every MTN failure code as a constant', () => {
     expect(ErrorReason.PAYEE_NOT_FOUND).toBe('PAYEE_NOT_FOUND')
     expect(ErrorReason.PAYER_NOT_FOUND).toBe('PAYER_NOT_FOUND')
@@ -89,6 +111,14 @@ describe('ErrorReason', () => {
     expect(ErrorReason.EXPIRED).toBe('EXPIRED')
     expect(ErrorReason.TRANSACTION_CANCELED).toBe('TRANSACTION_CANCELED')
     expect(ErrorReason.RESOURCE_ALREADY_EXIST).toBe('RESOURCE_ALREADY_EXIST')
+    expect(ErrorReason.LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED).toBe(
+      'LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED'
+    )
+    expect(ErrorReason.COULD_NOT_PERFORM_TRANSACTION).toBe('COULD_NOT_PERFORM_TRANSACTION')
+    expect(ErrorReason.SENDER_ACCOUNT_NOT_ACTIVE).toBe('SENDER_ACCOUNT_NOT_ACTIVE')
+    expect(ErrorReason.PAYEE_LIMIT_REACHED).toBe('PAYEE_LIMIT_REACHED')
+    expect(ErrorReason.TRANSACTION_NOT_FOUND).toBe('TRANSACTION_NOT_FOUND')
+    expect(ErrorReason.VALIDATION_ERROR).toBe('VALIDATION_ERROR')
   })
 })
 
@@ -120,13 +150,44 @@ describe('Transaction.getReason', () => {
     expect(transaction.getReason()).toBeNull()
   })
 
-  it('returns null when reason is not an object', () => {
+  it('parses the bare string reason Get Status returns for a FAILED transaction', () => {
+    // MTN's documented Get Status body: HTTP 200, reason as a string
     const transaction = Transaction.parse({
       externalId: 'ext-ref-001',
+      amount: '5000',
+      currency: 'XAF',
       status: 'FAILED',
       reason: 'NOT_ENOUGH_FUNDS',
     })
 
-    expect(transaction.getReason()).toBeNull()
+    const reason = transaction.getReason()
+
+    expect(reason).not.toBeNull()
+    expect(reason!.getCode()).toBe('NOT_ENOUGH_FUNDS')
+    expect(reason!.getMessage()).toBe('')
+    expect(reason!.isNotEnoughFunds()).toBe(true)
+  })
+
+  it('parses the code MTN Congo returns for a payer who cannot pay', () => {
+    const transaction = Transaction.parse({
+      amount: '2500',
+      currency: 'XAF',
+      status: 'FAILED',
+      reason: 'LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED',
+    })
+
+    const reason = transaction.getReason()
+
+    expect(reason!.isLowBalanceOrPayeeLimitReachedOrNotAllowed()).toBe(true)
+    expect(reason!.isPayerFundingFailure()).toBe(true)
+    expect(reason!.isNotEnoughFunds()).toBe(false)
+  })
+
+  it('returns null when reason is an empty string or another type', () => {
+    for (const reason of ['', 42, true, ['NOT_ENOUGH_FUNDS']]) {
+      const transaction = Transaction.parse({ status: 'FAILED', reason })
+
+      expect(transaction.getReason(), JSON.stringify(reason)).toBeNull()
+    }
   })
 })
