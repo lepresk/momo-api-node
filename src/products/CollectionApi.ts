@@ -9,9 +9,12 @@ export class CollectionApi extends AbstractApiProduct {
   /**
    * Request a payment from a consumer. The payer authorizes it out of band, so
    * this returns a reference id to poll with {@link getPaymentStatus}.
+   *
+   * @param referenceId UUID to use as the reference id instead of a random one,
+   *   so the payment can be queried even if the response never arrives
    */
-  async requestToPay(request: PaymentRequest): Promise<string> {
-    return this.submit('/collection/v1_0/requesttopay', request.toBody())
+  async requestToPay(request: PaymentRequest, referenceId?: string): Promise<string> {
+    return this.submit('/collection/v1_0/requesttopay', request.toBody(), referenceId)
   }
 
   async getPaymentStatus(paymentId: string): Promise<Transaction> {
@@ -23,8 +26,9 @@ export class CollectionApi extends AbstractApiProduct {
     amount: string,
     phone: string,
     reference: string,
-    currency: string = DEFAULT_CURRENCY
+    currency: string = DEFAULT_CURRENCY,
+    referenceId?: string
   ): Promise<string> {
-    return this.requestToPay(PaymentRequest.make(amount, phone, reference, currency))
+    return this.requestToPay(PaymentRequest.make(amount, phone, reference, currency), referenceId)
   }
 }

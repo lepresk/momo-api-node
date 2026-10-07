@@ -4,7 +4,7 @@ import { AccountBalance } from '../models/AccountBalance.js'
 import { Transaction } from '../models/Transaction.js'
 import { FetchLike, resolveFetch, assertStatus, readJson } from '../support/http.js'
 import { TokenCache } from '../support/TokenCache.js'
-import { generateUUID } from '../support/uuid.js'
+import { generateUUID, assertUUID } from '../support/uuid.js'
 import { SANDBOX_CURRENCY } from '../models/currency.js'
 
 /**
@@ -73,14 +73,19 @@ export abstract class AbstractApiProduct {
   }
 
   /**
-   * POST a request and return the generated reference id. The API answers
+   * POST a request and return its reference id. The API answers
    * `202 Accepted` and reports the outcome asynchronously.
+   *
+   * The reference id is `referenceId` when given, a random UUID otherwise.
+   * Passing your own lets you query the status after a timeout or 5xx without
+   * having seen the response, and retry with the same id instead of risking a
+   * second payment. MTN requires a UUID; anything else throws before sending.
    *
    * The sandbox rejects any currency but EUR, so there the body's currency is
    * replaced: code written for XAF runs unchanged against the sandbox.
    */
-  protected async submit(path: string, body: object): Promise<string> {
-    const referenceId = generateUUID()
+  protected async submit(path: string, body: object, referenceId: string = generateUUID()): Promise<string> {
+    assertUUID(referenceId, 'referenceId')
     const token = await this.getAccessToken()
     // 'sandbox' is MomoApi's ENVIRONMENT_SANDBOX; importing it here would be circular
     if (this.environment === 'sandbox') {
