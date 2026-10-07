@@ -323,6 +323,32 @@ process-wide, so two libraries using this package cannot affect each other.
 | `ENVIRONMENT_LIBERIA`       | `mtnliberia`        |
 | `ENVIRONMENT_SANDBOX`       | `sandbox`           |
 
+## Retrying without paying twice
+
+Each write returns the id you poll its status with. By default it is a random
+UUID, so if the request times out or fails with a 5xx you never learn it: you
+cannot ask whether the payment went through, and retrying sends a new id that
+MTN or Airtel treats as a new payment.
+
+Pass your own UUID as the last argument instead, and store it before sending.
+After an ambiguous failure, query the status with it; retry with the same id
+only once the status says the first attempt does not exist.
+
+```typescript
+import { v5 as uuidv5 } from 'uuid'
+
+// Derive it from your own key, so the same line always gets the same id
+const referenceId = uuidv5(`${batchRef}-${lineNo}`, MY_NAMESPACE_UUID)
+await disbursement.transfer(transferRequest, referenceId)
+const transfer = await disbursement.getTransferStatus(referenceId)
+
+// Airtel takes it as transactionId, the externalId it returns
+await airtelDisbursement.transfer('10000', '068511358', 'PAY-001', referenceId)
+```
+
+The id must be a UUID (any version): anything else throws before a request is
+sent. Without it, every method keeps generating a random UUID.
+
 ## Handling callbacks
 
 > **Callbacks are not signed.** Neither MTN nor Airtel signs the request sent to
@@ -454,21 +480,21 @@ if (transaction.isFailed()) {
 
 | Method | Description |
 |---|---|
-| `requestToPay(request)` | Initiate a payment request; returns the reference ID |
+| `requestToPay(request, referenceId?)` | Initiate a payment request; returns the reference ID |
 | `getPaymentStatus(paymentId)` | Get the status of a payment |
 | `getBalance()` | Get the collection account balance |
-| `quickPay(amount, phone, reference, currency?)` | Shorthand to initiate a payment |
+| `quickPay(amount, phone, reference, currency?, referenceId?)` | Shorthand to initiate a payment |
 | `getAccessToken()` | Retrieve an OAuth access token |
 
 ### DisbursementApi
 
 | Method | Description |
 |---|---|
-| `deposit(request)` | Deposit funds to a customer; returns the reference ID |
+| `deposit(request, referenceId?)` | Deposit funds to a customer; returns the reference ID |
 | `getDepositStatus(depositId)` | Get the status of a deposit |
-| `transfer(request)` | Transfer funds; returns the reference ID |
+| `transfer(request, referenceId?)` | Transfer funds; returns the reference ID |
 | `getTransferStatus(transferId)` | Get the status of a transfer |
-| `refund(request)` | Refund a previous payment; returns the reference ID |
+| `refund(request, referenceId?)` | Refund a previous payment; returns the reference ID |
 | `getRefundStatus(refundId)` | Get the status of a refund |
 | `getBalance()` | Get the disbursement account balance |
 | `getAccessToken()` | Retrieve an OAuth access token |
@@ -477,7 +503,7 @@ if (transaction.isFailed()) {
 
 | Method | Description |
 |---|---|
-| `requestToPay(amount, phone, reference)` | Request payment from customer; returns the external ID |
+| `requestToPay(amount, phone, reference, transactionId?)` | Request payment from customer; returns the external ID |
 | `getPaymentStatus(externalId)` | Check payment status (returns `AirtelTransaction`) |
 | `getBalance()` | Get account balance |
 | `getAccessToken()` | Get OAuth token (cached automatically) |
@@ -486,7 +512,7 @@ if (transaction.isFailed()) {
 
 | Method | Description |
 |---|---|
-| `transfer(amount, phone, reference)` | Transfer money (requires `encryptedPin`); returns the external ID |
+| `transfer(amount, phone, reference, transactionId?)` | Transfer money (requires `encryptedPin`); returns the external ID |
 | `getTransferStatus(externalId)` | Check transfer status (returns `AirtelTransaction`) |
 | `getBalance()` | Get account balance |
 | `getAccessToken()` | Get OAuth token (cached automatically) |

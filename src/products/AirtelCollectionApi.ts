@@ -1,15 +1,23 @@
 import { AbstractAirtelApi } from './AbstractAirtelApi.js'
 import { AirtelTransaction } from '../models/AirtelTransaction.js'
-import { generateUUID } from '../support/uuid.js'
+import { generateUUID, assertUUID } from '../support/uuid.js'
 
 export class AirtelCollectionApi extends AbstractAirtelApi {
   /**
    * Initiate a payment request. Returns the externalId to poll with
    * {@link getPaymentStatus}.
+   *
+   * @param transactionId UUID to use as the externalId instead of a random one,
+   *   so the payment can be queried even if the response never arrives
    */
-  async requestToPay(amount: string, phone: string, reference: string): Promise<string> {
+  async requestToPay(
+    amount: string,
+    phone: string,
+    reference: string,
+    transactionId: string = generateUUID()
+  ): Promise<string> {
+    assertUUID(transactionId, 'transactionId')
     const token = await this.getAccessToken()
-    const externalId = generateUUID()
 
     const response = await this.fetchImpl(`${this.baseUrl}/merchant/v1/payments/`, {
       method: 'POST',
@@ -28,13 +36,13 @@ export class AirtelCollectionApi extends AbstractAirtelApi {
           amount: parseFloat(amount),
           country: this.config.country,
           currency: this.config.currency,
-          id: externalId,
+          id: transactionId,
         },
       }),
     })
 
     await this.readAirtel(response)
-    return externalId
+    return transactionId
   }
 
   async getPaymentStatus(externalId: string): Promise<AirtelTransaction> {
