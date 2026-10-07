@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-10-07
+
+Caller-supplied reference ids. Anyone who retries writes after a timeout or 5xx
+should upgrade: with a random id, a lost response could not be queried and a
+retry could pay twice.
 
 ### Added
 - Write methods take an optional caller-supplied id: `referenceId` on MTN
