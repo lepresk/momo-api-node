@@ -1,6 +1,6 @@
 {
   "name": "@lepresk/momo-api",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "MTN Mobile Money and Airtel Money API client for Node.js \u2014 collections, disbursements and remittances",
   "author": "lepresk <lepresk@gmail.com>",
   "license": "MIT",

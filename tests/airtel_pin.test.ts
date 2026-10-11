@@ -48,10 +48,10 @@ describe('encryptAirtelPin', () => {
     expect(encryptAirtelPin('1234', base64Pem)).not.toBe(encryptAirtelPin('1234', base64Pem))
   })
 
-  it('accepts a base64-wrapped PEM, a bare PEM and a bare base64 body alike', () => {
+  it('accepts a PEM, a base64 PEM, the bare base64 body and that body base64-encoded', () => {
     const bare = publicKey.replace(/-----(BEGIN|END) PUBLIC KEY-----/g, '').replace(/\s/g, '')
 
-    for (const key of [base64Pem, publicKey, Buffer.from(bare).toString('base64')]) {
+    for (const key of [base64Pem, publicKey, bare, Buffer.from(bare).toString('base64')]) {
       expect(Buffer.from(encryptAirtelPin('1234', key), 'base64')).toHaveLength(
         MODULUS_BITS / 8
       )
@@ -69,5 +69,8 @@ describe('encryptAirtelPin', () => {
   it.runIf(canDecryptPkcs1)('round-trips through the matching private key', () => {
     expect(decrypt(encryptAirtelPin('1234', base64Pem))).toBe('1234')
     expect(decrypt(encryptAirtelPin('4321', publicKey))).toBe('4321')
+
+    const bare = publicKey.replace(/-----(BEGIN|END) PUBLIC KEY-----/g, '').replace(/\s/g, '')
+    expect(decrypt(encryptAirtelPin('5678', bare))).toBe('5678')
   })
 })
