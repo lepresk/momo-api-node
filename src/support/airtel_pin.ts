@@ -2,10 +2,12 @@ import crypto from 'node:crypto'
 
 const PEM_HEADER = '-----BEGIN PUBLIC KEY-----'
 const PEM_FOOTER = '-----END PUBLIC KEY-----'
+const BASE64_TEXT = /^[A-Za-z0-9+/=\s]+$/
 
 /**
- * Airtel hands out the disbursement public key base64-encoded, sometimes with
- * the PEM armour and sometimes without. Accept either, plus a plain PEM.
+ * Airtel hands out the disbursement public key in several shapes: a PEM, a
+ * base64-encoded PEM, the bare base64 body, or that body base64-encoded again.
+ * Accept all four.
  */
 function toPem(key: string): string {
   const trimmed = key.trim()
@@ -18,7 +20,10 @@ function toPem(key: string): string {
     return decoded
   }
 
-  const body = decoded.replace(/\s/g, '').match(/.{1,64}/g)?.join('\n') ?? decoded
+  // Either the base64 DER body itself, which decodes to binary, or that body
+  // base64-encoded once more, which decodes to base64 text
+  const source = BASE64_TEXT.test(decoded) ? decoded : trimmed
+  const body = source.replace(/\s/g, '').match(/.{1,64}/g)?.join('\n') ?? source
   return `${PEM_HEADER}\n${body}\n${PEM_FOOTER}`
 }
 
