@@ -64,6 +64,6 @@ describe('published package', () => {
         apiUser: 'b',
         apiKey: 'c',
       }).getBaseUrl()
-    ).toBe('https://proxy.momoapi.mtn.com')
+    ).toBe('https://momoapi.momo.africa')
   })
 })

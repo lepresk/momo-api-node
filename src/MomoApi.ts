@@ -18,7 +18,7 @@ export const ENVIRONMENT_LIBERIA = 'mtnliberia'
 export const ENVIRONMENT_SANDBOX = 'sandbox'
 
 export const SANDBOX_URL = 'https://sandbox.momodeveloper.mtn.com'
-export const PRODUCTION_URL = 'https://proxy.momoapi.mtn.com'
+export const PRODUCTION_URL = 'https://momoapi.momo.africa'
 
 /** Every environment the client accepts: sandbox plus the 11 production markets. */
 export const MTN_ENVIRONMENTS = [
