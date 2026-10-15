@@ -39,6 +39,16 @@ describe('SandboxApi', () => {
       expect(result).toBe('my-user-uuid')
     })
 
+    it('sends X-Target-Environment: sandbox', async () => {
+      const fetchMock = mockFetch([{ status: 201, body: '' }])
+      vi.stubGlobal('fetch', fetchMock)
+
+      await new SandboxApi(SUBSCRIPTION_KEY, BASE_URL).createApiUser('my-user-uuid', 'https://example.com')
+
+      const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>
+      expect(headers['X-Target-Environment']).toBe('sandbox')
+    })
+
     it('throws ConflictException when the API user already exists (409)', async () => {
       vi.stubGlobal('fetch', mockFetch([{ status: 409, body: 'Conflict' }]))
 

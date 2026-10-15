@@ -14,6 +14,8 @@ export class SandboxApi {
   private headers(contentType = false): Record<string, string> {
     const headers: Record<string, string> = {
       'Ocp-Apim-Subscription-Key': this.subscriptionKey,
+      // Provisioning only exists in the sandbox
+      'X-Target-Environment': 'sandbox',
       'Accept': 'application/json',
     }
     if (contentType) {

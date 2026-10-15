@@ -132,6 +132,7 @@ export abstract class AbstractApiProduct {
       headers: {
         'Authorization': this.getBasicAuth(),
         'Ocp-Apim-Subscription-Key': this.config.subscriptionKey,
+        'X-Target-Environment': this.environment,
         'Accept': 'application/json',
       },
     })
