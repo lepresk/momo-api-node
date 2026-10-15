@@ -23,6 +23,19 @@ const transfer = TransferRequest.make('100', '242068511358', 'PAY-1')
 const refund = RefundRequest.make('100', 'origin-ref', 'REFUND-1')
 
 describe('MTN request headers', () => {
+  it('sends X-Target-Environment on the token request', async () => {
+    const fetchImpl = sequence(jsonResponse(tokenSuccess, 200), jsonResponse('', 202))
+    const api = new CollectionApi(config, BASE_URL, 'mtncongo', fetchImpl)
+
+    await api.requestToPay(payment)
+
+    const tokenHeaders = fetchImpl.mock.calls[0][1].headers as Record<string, string>
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${BASE_URL}/collection/token/`)
+    expect(tokenHeaders['X-Target-Environment']).toBe('mtncongo')
+    const headers = fetchImpl.mock.calls[1][1].headers as Record<string, string>
+    expect(headers['X-Target-Environment']).toBe('mtncongo')
+  })
+
   it('asks for a JSON response on requestToPay', async () => {
     const fetchImpl = sequence(jsonResponse(tokenSuccess, 200), jsonResponse('', 202))
     const api = new CollectionApi(config, BASE_URL, ENVIRONMENT, fetchImpl)
